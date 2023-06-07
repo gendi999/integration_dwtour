@@ -133,7 +133,7 @@ function Home() {
               Group Tour
             </h1>
           </div>
-          <Row
+          {/* <Row
             xs={3}
             md={3}
             className="g-3"
@@ -172,20 +172,55 @@ function Home() {
                       </Card.Title>
 
                         </div>
-                      {/* <div className="d-flex gap-5">
-                                        <div className="d-flex gap-2">
-                                            <div>
-                                                <img width={13} src={view1} alt="" />
-                                            </div>
-                                            <span style={{fontSize:"13px",  color: '#555555'}}>{item?.price}</span>
-                                        </div>
-                                        <div className="d-flex gap-2">
-                                            <div>
-                                                <img width={13}  src={waktu} alt="" />
-                                            </div>
-                                            <span style={{fontSize:"13px",  color: '#555555'}}>{item?.formatTime}</span>
-                                        </div>
-                                    </div> */}
+
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Link>
+            ))}
+          </Row> */}
+        </div>
+        <div style={{marginTop:"700px"}}>
+           <Row
+            xs={3}
+            md={3}
+            className="g-3"
+            style={{ marginTop: "0px", marginLeft: "0px",padding:"50px" }}
+          >
+            {trips?.map((item, idx) => (
+              <Link className="text-decoration-none " to={`/Detail/${item.id}`}>
+                <Col key={idx} >
+                  <Card style={{ padding:"30px" }}>
+                  <p className="text-decoration-none" style={{marginLeft:"290px",marginTop:"30px",position:"absolute",background:"white",borderRadius:"5px 0 0 5px",textAlign:"center",width:"50px",height:"30px"}}>0/{item.quota}</p>
+                    <Card.Img variant="dark" src={item.image} />
+                    <Card.Body>
+                      <Card.Title style={{ color: "black" }}>
+                        {item.title}
+                      </Card.Title>
+                      <div className="flex" style={{marginTop:"10px"}}>
+
+                      <Card.Title
+                        style={{
+                          fontSize: "14px",
+                          textDecoration: "none",
+                          cursor: "pointer",
+                          color: "#555555",
+                        }}
+                        >
+                        {item.country.name}
+                      </Card.Title>
+                      <Card.Title
+                      style={{
+                        fontSize:"14px",
+                        marginLeft:"200px",
+                        color:"yellow",
+                      }}
+                      >
+                        IDR.{item.price}
+                      </Card.Title>
+
+                        </div>
+
                     </Card.Body>
                   </Card>
                 </Col>

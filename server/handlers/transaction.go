@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 	dto "tour/dto/result"
 	transactiondto "tour/dto/transaction"
 	"tour/models"
@@ -11,6 +13,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/midtrans/midtrans-go"
+	"github.com/midtrans/midtrans-go/snap"
 )
 
 // var path_file = "http://localhost:5000/uploads/"
@@ -54,10 +58,7 @@ func (h *handlerTransaction) GetTransaction(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: transaction})
 }
-
 func (h *handlerTransaction) CreateTransaction(c echo.Context) error {
-	userLogin := c.Get("userLogin")
-	userId := userLogin.(jwt.MapClaims)["id"].(float64)
 	request := new(transactiondto.CreateTransactionRequest)
 	if err := c.Bind(request); err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
@@ -69,45 +70,75 @@ func (h *handlerTransaction) CreateTransaction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
 	}
 
-	transaction := models.Transaction{
-		Counterqty: request.Counterqty,
-		Total:      request.Total,
-		Status:     request.Status,
-		TripID:     request.TripID,
-		UserID:     int(userId),
-		// UserID:     request.UserID,
-		// Films: request.Film,
-		// FilmID: request.FilmID,
-		// Films: request.Films,
-		// Email:    request.Email,
-		// Password: request.Password,
+	userLogin := c.Get("userLogin")
+	userId := userLogin.(jwt.MapClaims)["id"].(float64)
+
+	// Startdate := time.Now()
+	// EndDate := time.Now().Add(time.Hour * 24 * time.Duration(request.Days))
+
+	// Create Unique Transaction Id ...
+	var transactionIsMatch = false
+	var transactionId int
+	for !transactionIsMatch {
+		transactionId = int(time.Now().Unix())
+		transactionData, _ := h.TransactionRepository.GetTransaction(transactionId)
+		if transactionData.ID == 0 {
+			transactionIsMatch = true
+		}
 	}
 
-	data, err := h.TransactionRepository.CreateTransaction(transaction)
+	transaction := models.Transaction{
+		ID:         transactionId,
+		Counterqty: request.Counterqty,
+		UserID:     int(userId),
+		TripID:     request.TripID,
+		// StartDate: Startdate,
+		// EndDate:   EndDate,
+		Total:  request.Total,
+		Status: "Pendding",
+	}
+
+	dataTransactions, err := h.TransactionRepository.CreateTransaction(transaction)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: data})
+	// dataTransactions, err := h.TransactionRepository.GetTransaction(newTransactions.ID)
+	// if err != nil {
+	// 	return c.JSON(http.StatusInternalServerError, dto.ErrorResult{Status: http.StatusInternalServerError, Message: err.Error()})
+	// }
+
+	// 1. Initiate Snap client
+	var s = snap.Client{}
+	s.New(os.Getenv("SERVER_KEY"), midtrans.Sandbox)
+
+	// 2. Initiate Snap request param
+	req := &snap.Request{
+		TransactionDetails: midtrans.TransactionDetails{
+			OrderID:  strconv.Itoa(dataTransactions.ID),
+			GrossAmt: int64(dataTransactions.Total),
+		},
+		CreditCard: &snap.CreditCardDetails{
+			Secure: true,
+		},
+		CustomerDetail: &midtrans.CustomerDetails{
+			FName: dataTransactions.User.Fullname,
+			Email: dataTransactions.User.Email,
+		},
+	}
+
+	//3. Execute request create Snap transaction to Midtrans Snap API
+	snapResp, _ := s.CreateTransaction(req)
+
+	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: snapResp})
 }
 
 // func (h *handlerTransaction) CreateTransaction(c echo.Context) error {
-// 	// get the datafile here
-// 	dataFile := c.Get("dataFile").(string)
-// 	fmt.Println("this is data file", dataFile)
-
-// 	tripid, _ := strconv.Atoi(c.FormValue("tripid"))
-// 	userid, _ := strconv.Atoi(c.FormValue("userid"))
-// 	counterqty, _ := strconv.Atoi(c.FormValue("counterqty"))
-// 	total, _ := strconv.Atoi(c.FormValue("total"))
-
-// 	request := transactiondto.CreateTransactionRequest{
-// 		Counterqty: counterqty,
-// 		Total:      total,
-// 		Status:     c.FormValue("status"),
-// 		// Attachment: dataFile,
-// 		TripID: tripid,
-// 		UserID: userid,
+// 	userLogin := c.Get("userLogin")
+// 	userId := userLogin.(jwt.MapClaims)["id"].(float64)
+// 	request := new(transactiondto.CreateTransactionRequest)
+// 	if err := c.Bind(request); err != nil {
+// 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
 // 	}
 
 // 	validation := validator.New()
@@ -120,57 +151,61 @@ func (h *handlerTransaction) CreateTransaction(c echo.Context) error {
 // 		Counterqty: request.Counterqty,
 // 		Total:      request.Total,
 // 		Status:     request.Status,
-// 		// Attachment: request.Attachment,
-// 		TripID: request.TripID,
-// 		UserID: request.UserID,
+// 		TripID:     request.TripID,
+// 		UserID:     int(userId),
+// 		// UserID:     request.UserID,
+// 		// Films: request.Film,
+// 		// FilmID: request.FilmID,
+// 		// Films: request.Films,
+// 		// Email:    request.Email,
+// 		// Password: request.Password,
 // 	}
 
 // 	data, err := h.TransactionRepository.CreateTransaction(transaction)
 // 	if err != nil {
 // 		return c.JSON(http.StatusInternalServerError, dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()})
 // 	}
-// 	transaction, _ = h.TransactionRepository.GetTransaction(transaction.ID)
 
-//		return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: data})
-//	}
+// 	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: data})
+// }
 
-func (h *handlerTransaction) UpdateTransaction(c echo.Context) error {
-	request := new(transactiondto.UpdateTransactionRequest)
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
-	}
+// func (h *handlerTransaction) UpdateTransaction(c echo.Context) error {
+// 	request := new(transactiondto.UpdateTransactionRequest)
+// 	if err := c.Bind(&request); err != nil {
+// 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
+// 	}
 
-	id, _ := strconv.Atoi(c.Param("id"))
+// 	id, _ := strconv.Atoi(c.Param("id"))
 
-	transaction, err := h.TransactionRepository.GetTransaction(id)
+// 	transaction, err := h.TransactionRepository.GetTransaction(id)
 
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
-	}
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
+// 	}
 
-	if request.Counterqty != 0 {
-		transaction.Counterqty = request.Counterqty
-	}
-	if request.Total != 0 {
-		transaction.Total = request.Total
-	}
-	if request.Status != "" {
-		transaction.Status = request.Status
-	}
-	if request.TripID != 0 {
-		transaction.TripID = request.TripID
-	}
-	// if request.UserID != 0 {
-	// 	transaction.UserID = request.UserID
-	// }
+// 	if request.Counterqty != 0 {
+// 		transaction.Counterqty = request.Counterqty
+// 	}
+// 	if request.Total != 0 {
+// 		transaction.Total = request.Total
+// 	}
+// 	if request.Status != "" {
+// 		transaction.Status = request.Status
+// 	}
+// 	if request.TripID != 0 {
+// 		transaction.TripID = request.TripID
+// 	}
+// 	// if request.UserID != 0 {
+// 	// 	transaction.UserID = request.UserID
+// 	// }
 
-	data, err := h.TransactionRepository.UpdateTransaction(transaction, id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()})
-	}
+// 	data, err := h.TransactionRepository.UpdateTransaction(transaction, id)
+// 	if err != nil {
+// 		return c.JSON(http.StatusInternalServerError, dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()})
+// 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: data})
-}
+// 	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: data})
+// }
 
 // func (h *handlerTransaction) UpdateTransaction(c echo.Context) error {
 // 	// request := new(tripdto.UpdateTripRequest)

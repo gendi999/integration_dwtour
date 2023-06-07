@@ -1,14 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	dto "tour/dto/result"
 	tripdto "tour/dto/trip"
 	"tour/models"
 	"tour/repositories"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
@@ -27,9 +31,9 @@ func (h *handlerTrip) FindTrips(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
 	}
-	for i, p := range trips {
-		trips[i].Image = path_file + p.Image
-	}
+	// for i, p := range trips {
+	// 	trips[i].Image = path_file + p.Image
+	// }
 
 	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: trips})
 }
@@ -40,7 +44,7 @@ func (h *handlerTrip) GetTrip(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
 	}
-	trip.Image = path_file + trip.Image
+	// trip.Image = path_file + trip.Image
 
 	return c.JSON(http.StatusOK, dto.SuccessResult{Code: http.StatusOK, Data: trip})
 }
@@ -76,6 +80,21 @@ func (h *handlerTrip) CreateTrip(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()})
 	}
 
+	var ctx = context.Background()
+	var CLOUD_NAME = os.Getenv("CLOUD_NAME")
+	var API_KEY = os.Getenv("API_KEY")
+	var API_SECRET = os.Getenv("API_SECRET")
+
+	// Add your Cloudinary credentials ...
+	cld, _ := cloudinary.NewFromParams(CLOUD_NAME, API_KEY, API_SECRET)
+
+	// Upload file to Cloudinary ...
+	resp, err := cld.Upload.Upload(ctx, dataFile, uploader.UploadParams{Folder: "uploads"})
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	trip := models.Trip{
 		Title:          request.Title,
 		CountryID:      request.CountryID,
@@ -89,7 +108,7 @@ func (h *handlerTrip) CreateTrip(c echo.Context) error {
 		Price:          request.Price,
 		Quota:          request.Quota,
 		Description:    request.Description,
-		Image:          request.Image,
+		Image:          resp.SecureURL,
 	}
 
 	data, err := h.TripRepository.CreateTrip(trip)

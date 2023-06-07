@@ -9,9 +9,9 @@ type User struct {
 	Password string `json:"-" gorm:"type: varchar(255)"`
 	Phone    string `json:"phone" gorm:"type: varchar(255)"`
 	// Gender   string `json:"gender" gorm:"type: varchar(255)"`
-	Address string `json:"address" gorm:"type: varchar(255)"`
-	Role    string `json:"role"`
-	// Subcribe bool   `json:"subcribe" gorm:"type: bool"`
+	Address  string `json:"address" gorm:"type: varchar(255)"`
+	Role     string `json:"role"`
+	Subcribe bool   `json:"subcribe" gorm:"type: bool"`
 	// Products  []ProductUserResponse `json:"products"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`

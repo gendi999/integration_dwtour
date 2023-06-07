@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "react-query";
 import { API } from "../config/api";
 import Footer from "../components/Footer";
+import Addcountry from "../pages/Addcountry"
 // import Card from "react-bootstrap/Card";
 import Card from "react-bootstrap/Card";
 import Col from "react-bootstrap/Col";
@@ -21,6 +22,10 @@ function Trip() {
     const btnvalue = e.target.value;
     setDelete(Number(btnvalue));
   };
+  const handleAdd = (e) => {
+    e.preventDefault();
+    navigate("/Addtrip")
+  }
   let { data: trips, refetch } = useQuery("tripsChache", async () => {
     const response = await API.get("/trips");
     console.log("data :", response.data);
@@ -120,22 +125,26 @@ function Trip() {
           >
             Income Trip
           </h1>
-          <Link to="/Addtrip">
-            <Button
+          <h1 style={{position:"absolute",marginLeft:"800px",marginTop:"50px"}}>
+              <Addcountry />
+            </h1>
+          {/* <Link to="/Addtrip"> */}
+            <Button onClick={handleAdd} 
               style={{
                 marginLeft: "730px",
                 marginTop: "50px",
                 width: "213px",
                 height: "50px",
-                left: "1016px",
-                top: "1284px",
+                // left: "1016px",
+                // top: "1284px",
                 background: " #FFAF00",
                 borderRadius: "5px",
               }}
             >
               Add Trip
             </Button>
-          </Link>
+            
+          {/* </Link> */}
         </div>
 
         <Row
@@ -191,9 +200,9 @@ function Trip() {
                     </div>
                   </Card.Body>
             </Link>
-                  {/* <Card.Body>
+                  <Card.Body>
                     <button onClick={handleDelete} type="buton" className="shadow  btn btn-danger fw-bold  " style={{width:"70px"}} name={item.id} value={item.id}>kontol doni</button>
-                  </Card.Body> */}
+                  </Card.Body>
                 </Card>
               </Col>
           ))}

@@ -36,9 +36,8 @@ function Historytrip() {
             <div
             style={{ background:"E5E5E5",  height: "90.5vh", margin:"20px",}}
               className=" align-items-center justify-content-center">
-                {usertrans?.map((item) => (
 
-                
+          {usertrans?.map((item) => (        
                 <div
         //   className="bg-secondary"
           style={{

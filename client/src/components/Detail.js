@@ -90,35 +90,102 @@ function Detail() {
     
     console.log("dataformdet", form)
 
-    
-    const mutation = useMutation((jsonData) => API.post("/transaction", jsonData,{
-      Authorization:"Bearer " + localStorage.token
-    }));
-    const handleSubmit = async () => {
-      const jsonData = ({
-        total: form.total,
-        counterqty: form.counterqty,
-        status: form.status,
-        tripid: form.tripid,
-        userid: form.userid 
-      });
-      // navigate("/Pay:/id")
-  
+    const handleSubmit= useMutation(async (e) => {
       try {
-        await mutation.mutateAsync(jsonData);
-        // alert("Transaksi berhasil!");
-        MySwal.fire({
-          title: <strong>Add Book Success</strong>,
-          html: <i>You clicked the button!</i>,
-          icon: 'success'
-          })
-        navigate(`/Pay/${id}`)
-        console.log("Transaction success!");
+        e.preventDefault();
+  
+        const config = {
+          headers: {
+            'Content-type': 'application/json',
+          },
+        };
+  
+        const data = {
+          total: total,
+      counterqty: counterqty,
+      // status:"pendding",
+      tripid: parseInt(id),
+      // userid:state.user.id
+        };
+  
+        const body = JSON.stringify(data);
+  
+        const response = await API.post('/transaction', body, config);
+        console.log("transaction success :", response)
+        const token = response.data.data.token;
+        window.snap.pay(token, {
+          onSuccess: function (result) {
+            /* You may add your own implementation here */
+            console.log(result);
+            navigate("/Profile");
+          },
+          onPending: function (result) {
+            /* You may add your own implementation here */
+            console.log(result);
+            navigate("/Profile");
+          },
+          onError: function (result) {
+            /* You may add your own implementation here */
+            console.log(result);
+            navigate("/Profile");
+          },
+          onClose: function () {
+            /* You may add your own implementation here */
+            alert("you closed the popup without finishing the payment");
+          },
+        });
+  
+        // code here
       } catch (error) {
-        alert("Gagal berhasil!");
-        console.log("Transaction failed: ", error);
+        console.log("transaction failed : ", error);
       }
-    };
+    });
+
+    useEffect(() => {
+      //change this to the script source you want to load, for example this is snap.js sandbox env
+      const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+      //change this according to your client-key
+      const myMidtransClientKey = process.env.REACT_APP_MIDTRANS_CLIENT_KEY;
+    
+      let scriptTag = document.createElement("script");
+      scriptTag.src = midtransScriptUrl;
+      // optional if you want to set script attribute
+      // for example snap.js have data-client-key attribute
+      scriptTag.setAttribute("data-client-key", myMidtransClientKey);
+    
+      document.body.appendChild(scriptTag);
+      return () => {
+        document.body.removeChild(scriptTag);
+      };
+    }, []);
+    // const mutation = useMutation((jsonData) => API.post("/transaction", jsonData,{
+    //   Authorization:"Bearer " + localStorage.token
+    // }));
+    // const handleSubmit = async () => {
+    //   const jsonData = ({
+    //     total: form.total,
+    //     counterqty: form.counterqty,
+    //     status: form.status,
+    //     tripid: form.tripid,
+    //     userid: form.userid 
+    //   });
+    //   // navigate("/Pay:/id")
+  
+    //   try {
+    //     await mutation.mutateAsync(jsonData);
+    //     // alert("Transaksi berhasil!");
+    //     // MySwal.fire({
+    //     //   title: <strong>Add Book Success</strong>,
+    //     //   html: <i>You clicked the button!</i>,
+    //     //   icon: 'success'
+    //     //   })
+    //     // navigate(`/Pay/${id}`)
+    //     console.log("Transaction success!");
+    //   } catch (error) {
+    //     alert("Gagal berhasil!");
+    //     console.log("Transaction failed: ", error);
+    //   }
+    // };
 
 
 
@@ -129,12 +196,6 @@ function Detail() {
     }, [total, counterqty]);
 
 
-  //   const hitungTotalHarga = () => {
-  // //     const trip? = detailTr.find((tour) => tour.id === parseInt(id));
-  //     const totalHarga = trip ? trip.price * counterqty : 0;
-  //     localStorage.setItem('totalHarga', totalHarga);
-
-  //   }
       return(
         <>
         <h1 style={{ marginLeft:"150px", marginTop:"50px",fontFamily:"Avenir",fontWeight:"bolder" }}>{trip?.title} </h1>
@@ -200,46 +261,56 @@ function Detail() {
 
     <h1 style={{ marginLeft:"150px", marginTop:"50px" }}>Information Trip</h1>
     <div className="flex" style={{marginLeft:"150px"}}>
+      <div>
       <p style={{color:"#A8A8A8"}}>acomodation</p>
-      <p style={{marginLeft:"120px", color:"#A8A8A8"}}>Tranformation</p>
-      <p style={{marginLeft:"120px",color:"#A8A8A8"}}>Eat</p>
-      <p style={{marginLeft:"150px",color:"#A8A8A8"}}>Time Date</p>
-      <p style={{marginLeft:"150px",color:"#A8A8A8"}}>Calendar</p>
+      <div className="flex">
+      <img style={{height:"30px"}} src={ihotel}/>
+      <h3 style={{fontSize:"20px", width:"180px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}}> {trip?.acommodation}</h3>
+      </div>
 
-    </div>
+      </div>
+      <div style={{marginLeft:"20px"}}>
+      <p style={{ color:"#A8A8A8"}}>Tranformation</p>
+      <div className="flex">
+      <img style={{height:"30px"}} src={ilion}/>
+        <h3 style={{fontSize:"20px",width:"180px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}} >{trip?.transportasion}</h3>
+      </div>
+      </div>
+      <div style={{marginLeft:"20px"}}>
+      <p style={{ color:"#A8A8A8"}}>Eat</p>
+      <div className="flex">
+      <img style={{height:"30px"}} src={ieat}/>
+        <h3 style={{fontSize:"20px", fontWeight:"bold",width:"180px", height: "33px",fontFamily: 'Avenir',alignItems:"center"}} >{trip?.eat}</h3>
+      </div>
+      </div>
+      
 
-    <div className="flex" >
+      <div style={{marginLeft:"20px"}}>
+      <p style={{ color:"#A8A8A8"}}>Time Date</p>
       <div className="flex">
-      <img style={{height:"30px",marginLeft:"150px"}} src={ihotel}/>
-      <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}}> {trip?.acommodation}</h3>
-      </div>
-      <div className="flex">
-      <img style={{height:"30px",marginLeft:"40px"}} src={ilion}/>
-        <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}} >{trip?.transportasion}</h3>
-      </div>
-      <div className="flex">
-      <img style={{height:"30px",marginLeft:"50px"}} src={ieat}></img>
-      <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}}>{trip?.eat}</h3>
-      </div>
-      <div className="flex">
-      <img style={{height:"30px",marginLeft:"50px"}} src={icalendar}></img>
+      <img style={{height:"30px"}} src={icalendar}/>
       <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}}>{trip?.day} Day </h3>
       <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir'}}>{trip?.night} Night</h3>
       </div>
-      <div className="flex">
-      <img style={{height:"30px",marginLeft:"50px"}} src={itime}></img>
-      <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}}> {trip?.datetrip}</h3>
       </div>
 
-
+      <div style={{marginLeft:"20px"}}>
+      <p style={{ color:"#A8A8A8"}}>Duration</p>
+      <div className="flex">
+      <img style={{height:"30px"}} src={itime}/>
+        <h3 style={{fontSize:"20px", fontWeight:"bold", height: "33px",fontFamily: 'Avenir',alignItems:"center"}} >{trip?.datetrip}</h3>
+      </div>
+      </div>
+ 
     </div>
+
     <h1 style={{marginLeft:"150px"}}>Description</h1>
     <p style={{marginLeft:"150px"}}>{trip?.description}</p>
 
     <div className="flex" style={{marginLeft:"150px"}}>
-    <h1 style={{color:"#FFAF00" , fontWeight:"bold", height: "33px",fontFamily: 'Avenir'}}>{trip?.price}</h1>
+    <h1 style={{color:"#FFAF00" , fontWeight:"bold", height: "33px",fontFamily: 'Avenir'}}>IDR.{trip?.price}</h1>
     <h1>/Person</h1>
-    <Button style={{marginLeft:"600px",background:"#e5e5e5",border:"none",height:"50px",fontWeight:"bold",fontFamily:"avenir"}}  onClick={kurangiJumlahProduk}>
+    <Button style={{marginLeft:"580px",background:"#e5e5e5",border:"none",height:"50px",fontWeight:"bold",fontFamily:"avenir"}}  onClick={kurangiJumlahProduk}>
       <img style={{height:"50px"}} src={Minus}/>
       </Button> 
     <h2 style={{marginTop:"8px"}}> {counterqty}</h2>
@@ -263,7 +334,7 @@ function Detail() {
     </div>
     { state.isLogin ? (
 
-  <Button type="submit" onClick={handleSubmit} style={{
+  <Button  onClick={(e) => handleSubmit.mutate(e)} type="submit"  style={{
     marginLeft:"1000px",
     width: "213px",
     height: "50px",

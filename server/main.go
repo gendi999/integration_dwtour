@@ -6,15 +6,16 @@ import (
 	"tour/pkg/mysql"
 	"tour/routes"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	// errEnv := godotenv.Load()
-	// if errEnv != nil {
-	// 	panic("Failed to load env file")
-	// }
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		panic("Failed to load env file")
+	}
 
 	e := echo.New()
 

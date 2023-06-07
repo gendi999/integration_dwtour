@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import { API } from "../config/api";
 import { useMutation, useQuery } from "react-query";
 import { useNavigate } from "react-router-dom";
+import Addcountry from "../pages/Addcountry"
 // import Swal from 'sweetalert2'
 import withReactContent from "sweetalert2-react-content";
 import Swal from "sweetalert2";
@@ -106,7 +107,11 @@ function Addtrip() {
   return (
     <>
       <div className="bg-white text-dark py-5" style={{ padding: "0px 170px" }}>
+        <div className="flex">
+
         <h5 className="fw-bold mb-5 ">Add Trip</h5>
+
+        </div>
         <Form className="secondary" onSubmit={(e) => handleSubmit.mutate(e)}>
           <p>Title</p>
           <Row className="mb-4">
